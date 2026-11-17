@@ -1,0 +1,72 @@
+import Notes from "../models/notes.model.js"
+import UserModel from "../models/user.model.js"
+import { generateAIResponse } from "../services/ai.services.js"
+import { buildPrompt } from "../utils/promptBuilder.js"
+
+export const generateNotes = async (req, res) => {
+    try {
+        const {
+            topic,
+            classLevel,
+            examType,
+            revisionMode = false,
+            includeDiagram = false,
+            includeChart = false,
+            userId
+        } = req.body;
+        if (!topic) {
+            return res.status(400).json({ message: "Topic is required" })
+        }
+        const user = userId ? await UserModel.findById(userId) : null;
+
+        const prompt = buildPrompt({
+            topic,
+            classLevel,
+            examType,
+            revisionMode,
+            includeDiagram,
+            includeChart
+        })
+
+
+        const aiResponse = await generateAIResponse(prompt)
+   
+
+        const notes = await Notes.create({
+            user: user?._id,
+            topic,
+            classLevel,
+            examType,
+            revisionMode,
+            includeDiagram,
+            includeChart,
+            content: aiResponse
+
+
+        })
+
+        if (user) {
+            if (!Array.isArray(user.notes)) {
+                user.notes = [];
+            }
+            user.notes.push(notes._id);
+            await user.save();
+        }
+
+        return res.status(200).json({
+            data: aiResponse,
+            noteId: notes._id
+        })
+
+
+
+
+    } catch (error) {
+        console.error(error);
+    res.status(500).json({
+      error: "AI generation failed",
+      message: error.message
+    });
+
+    }
+}
