@@ -1,0 +1,41 @@
+import React, { useEffect } from 'react'
+import { Navigate, Route, Routes } from 'react-router-dom'
+import Home from './pages/Home'
+import Auth from './pages/Auth'
+import { getCurrentUser } from './services/api'
+import { useDispatch, useSelector } from 'react-redux'
+import History from './pages/History'
+import Notes from './pages/Notes'
+import YouTubeSummarizer from './pages/YouTubeSummarizer'
+import VoiceToNotes from './pages/VoiceToNotes'
+import FormulaSheet from './pages/FormulaSheet'
+import { useTheme } from './context/ThemeContext'
+export const serverUrl = import.meta.env.VITE_SERVER_URL
+
+function App() {
+  const dispatch = useDispatch()
+  const { isDark } = useTheme()
+  
+  useEffect(()=>{
+   getCurrentUser(dispatch)
+  },[dispatch])
+
+  const {userData} = useSelector((state)=>state.user)
+  return (
+    <div className={isDark ? 'dark' : ''}>
+    <div className="min-h-screen bg-white dark:bg-gray-900 transition-colors duration-300">
+    <Routes>
+      <Route path='/' element={userData? <Home/> : <Navigate to="/auth" replace/>}/>
+      <Route path='/auth' element={userData ? <Navigate to="/" replace/> : <Auth/>}/>
+      <Route path='/history' element={userData? <History/> : <Navigate to="/auth" replace/>}/>
+      <Route path='/notes' element={userData? <Notes/> : <Navigate to="/auth" replace/>}/>
+      <Route path='/youtube' element={userData? <YouTubeSummarizer/> : <Navigate to="/auth" replace/>}/>
+      <Route path='/voice' element={userData? <VoiceToNotes/> : <Navigate to="/auth" replace/>}/>
+      <Route path='/formulas' element={userData? <FormulaSheet/> : <Navigate to="/auth" replace/>}/>
+    </Routes>
+    </div>
+    </div>
+  )
+}
+
+export default App
